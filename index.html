@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Results Table</title>
+</head>
+<body>
+    <label for="gradeSelect">Filter by Grade:</label>
+    <select id="gradeSelect">
+        <option value="all">All Grades</option>
+        <option value="1">Grade 1</option>
+        <option value="2">Grade 2</option>
+        <option value="3">Grade 3</option>
+        <option value="4">Grade 4</option>
+        <option value="5">Grade 5</option>
+    </select>
+    
+    <table id="resultsTable" border="1">
+        <thead>
+            <tr id="headerRow">
+                <th>Rank</th>
+                <th>UserName</th>
+                <th>Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        const test_name = [
+            "abc123", "abc232", "abc234", "abc254", "abc314", "abc344", "abc345"
+        ];
+
+        const json1 = [
+            { "UserName": "Sato", "abc123": 1234, "abc234": 1453, "abc314": 1253, "abc344": 1423 },
+            { "UserName": "Suzuki", "abc234": 982, "abc254": 2512, "abc314": 928, "abc344": 2101 },
+            { "UserName": "Tanaka", "abc123": 1214, "abc232": 1932, "abc234": 1923 },
+            { "UserName": "Takahashi", "abc123": 1324, "abc232": 2344, "abc344": 1545 }
+        ];
+
+        const json2 = [
+            { "UserName": "Sato", "abc345": 1323 },
+            { "UserName": "Suzuki", "abc345": 1323 },
+            { "UserName": "Takahashi", "abc345": 1323 }
+        ];
+
+        const users = [
+            {"UserName":"Sato", "Grade":1},
+            {"UserName":"Suzuki", "Grade":4},
+            {"UserName":"Takahashi", "Grade":4},
+            {"UserName":"Tanaka", "Grade":5},
+            {"UserName":"Ito", "Grade":3},
+            {"UserName":"Watanabe", "Grade":2}
+        ];
+
+        const allData = [...json1, ...json2];
+
+        // Function to merge JSON data by UserName
+        function mergeData(dataArray, usersArray) {
+            const mergedData = {};
+
+            dataArray.forEach(data => {
+                if (!mergedData[data.UserName]) {
+                    mergedData[data.UserName] = { "UserName": data.UserName };
+                    const user = usersArray.find(user => user.UserName === data.UserName);
+                    if (user) {
+                        mergedData[data.UserName].Grade = user.Grade;
+                    }
+                }
+                for (const [key, value] of Object.entries(data)) {
+                    if (key !== "UserName") {
+                        mergedData[data.UserName][key] = value;
+                    }
+                }
+            });
+
+            return Object.values(mergedData);
+        }
+
+        const mergedData = mergeData(allData, users);
+
+        // Calculate total of the top 3 scores after transformation and sort by descending total
+        mergedData.forEach(userData => {
+            const scores = [];
+            test_name.forEach(test => {
+                if (userData[test] !== undefined) {
+                    const transformedScore = Math.pow(2, userData[test] / 400) * 2000;
+                    scores.push(transformedScore);
+                    userData[test + "_transformed"] = transformedScore;
+                }
+            });
+            scores.sort((a, b) => b - a);
+            userData.total = scores.slice(0, 3).reduce((acc, score) => acc + score, 0);
+        });
+
+        mergedData.sort((a, b) => b.total - a.total);
+
+        // Populate table header
+        const headerRow = document.getElementById("headerRow");
+
+        // Add "Total" header
+        const thTotal = document.createElement("th");
+        thTotal.textContent = "Total";
+        headerRow.appendChild(thTotal);
+
+        test_name.forEach(test => {
+            const th = document.createElement("th");
+            th.textContent = test;
+            headerRow.appendChild(th);
+        });
+
+        // Function to create table row
+        function createTableRow(userData, rank) {
+            const tr = document.createElement("tr");
+
+            const tdRank = document.createElement("td");
+            tdRank.textContent = rank;
+            tr.appendChild(tdRank);
+
+            const tdUserName = document.createElement("td");
+            tdUserName.textContent = userData.UserName;
+            tr.appendChild(tdUserName);
+
+            const tdGrade = document.createElement("td");
+            tdGrade.textContent = userData.Grade;
+            tr.appendChild(tdGrade);
+
+            const tdTotal = document.createElement("td");
+            tdTotal.textContent = userData.total.toFixed(2); // Round to 2 decimal places
+            tr.appendChild(tdTotal);
+
+            test_name.forEach(test => {
+                const td = document.createElement("td");
+                if (userData[test] !== undefined) {
+                    const transformedScore = userData[test + "_transformed"];
+                    td.textContent = `${userData[test]} (${transformedScore.toFixed(2)})`;
+                } else {
+                    td.textContent = "";
+                }
+                tr.appendChild(td);
+            });
+
+            return tr;
+        }
+
+        // Populate table body based on grade filter
+        function populateTable() {
+            const gradeSelect = document.getElementById("gradeSelect");
+            const selectedGrade = gradeSelect.value;
+
+            // Clear existing rows
+            const tbody = document.getElementById("resultsTable").querySelector("tbody");
+            tbody.innerHTML = "";
+
+            // Filter data based on selected grade
+            const filteredData = selectedGrade === "all" ? mergedData : mergedData.filter(user => user.Grade == selectedGrade);
+
+            // Populate table rows
+            filteredData.forEach((userData, index) => {
+                tbody.appendChild(createTableRow(userData, index + 1));
+            });
+        }
+
+        // Initial table population
+        populateTable();
+
+        // Event listener for grade filter change
+        const gradeSelect = document.getElementById("gradeSelect");
+        gradeSelect.addEventListener("change", populateTable);
+    </script>
+</body>
+</html>
