@@ -41,7 +41,7 @@
     // Function to load JSON data asynchronously
     function loadJSON(filename, callback) {
         let xhr = new XMLHttpRequest();
-        const url_prefix = "http://kfrom40.qeq.jp/ajl2024summer/";
+        const url_prefix = "https://kfrom40.qeq.jp/ajl2024summer/";
         xhr.overrideMimeType("application/json");
         xhr.open('GET', url_prefix + filename, true);
         xhr.onreadystatechange = function () {
