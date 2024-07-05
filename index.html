@@ -37,6 +37,8 @@
     let g_resultData = null;
     let g_userData = null;
     let g_contestData = null;
+    let g_predictionData = null;
+    let g_selectedUser = null;
 
     // Function to load JSON data asynchronously
     function loadJSON(filename, callback) {
@@ -53,23 +55,17 @@
     }
 
     // Function to merge JSON data by UserName
-    function mergeData(dataArray, usersArray) {
+    function mergeData(dataObject, usersObject) {
         const mergedData = {};
 
-        dataArray.forEach(data => {
-            if (!mergedData[data.UserName]) {
-                mergedData[data.UserName] = { "UserName": data.UserName };
-                const user = usersArray.find(user => user.UserName === data.UserName);
-                if (user) {
-                    mergedData[data.UserName].Grade = user.Grade;
-                }
-            }
+        for (const [userName, data] of Object.entries(dataObject)) {
+            mergedData[userName] = {};
+            mergedData[userName].UserName = userName;
+            mergedData[userName].Grade = usersObject[userName].Grade;
             for (const [key, value] of Object.entries(data)) {
-                if (key !== "UserName") {
-                    mergedData[data.UserName][key] = value;
-                }
+                mergedData[userName][key] = value;
             }
-        });
+        };
 
         return Object.values(mergedData);
     }
@@ -83,9 +79,9 @@
 
     // Setup table with loaded data
     function setupTable(testNameData, json1Data, json2Data, usersData) {
-        const allData = [...json1Data, ...(json2Data || [])];
+        const allData = Object.assign(json1Data, json2Data);
 
-        const mergedData = mergeData(allData, usersData || []);
+        const mergedData = mergeData(allData, usersData);
 
         // Calculate total of the top 3 scores after transformation and sort by descending total
         mergedData.forEach(userData => {
@@ -127,7 +123,25 @@
 
             const tdUserName = document.createElement("td");
             tdUserName.classList.add("username", "sticky");
-            tdUserName.textContent = userData.UserName;
+
+            const sortButton = document.createElement("button");
+            if(userData.UserName === g_selectedUser) {
+                sortButton.textContent = "#";
+                sortButton.addEventListener("click", () => {
+                    g_selectedUser = null;
+                    clearSortTable();
+                });
+            } else {
+                sortButton.textContent = ">";
+                sortButton.addEventListener("click", () => {
+                    sortTableByUserName(userData.UserName);
+                });
+            }
+            sortButton.classList.add("usersort");
+
+            tdUserName.appendChild(sortButton); // ボタンを先に追加
+            tdUserName.appendChild(document.createTextNode(userData.UserName)); // 次に名前の文字列を追加
+
             tr.appendChild(tdUserName);
 
             const tdGrade = document.createElement("td");
@@ -140,12 +154,20 @@
             tdTotal.textContent = userData.total.toFixed(0);
             tr.appendChild(tdTotal);
 
+            if(userData.UserName === g_selectedUser) {
+                tdRank.classList.add("selected_user");
+                tdUserName.classList.add("selected_user");
+                tdGrade.classList.add("selected_user");
+                tdTotal.classList.add("selected_user");
+            }
+
             if(rank <= 20) {
                 tdRank.classList.add("prize");
                 tdUserName.classList.add("prize");
                 tdGrade.classList.add("prize");
                 tdTotal.classList.add("prize");
             }
+
             (testNameData || []).forEach(test => {
                 const td = document.createElement("td");
                 if (userData[test] !== undefined) {
@@ -195,6 +217,30 @@
 
     }
 
+    function sortTableByUserName(userName) {
+
+        const userData = g_predictionData[userName];
+        g_selectedUser = userName;
+
+        // ソート用の関数
+        const sortByObjValue = (a, b) => {
+            // `obj` に存在しないキーは値を -Infinity にする
+            const aValue = userData[a] !== undefined ? Number(userData[a]) : -Infinity;
+            const bValue = userData[b] !== undefined ? Number(userData[b]) : -Infinity;
+            return bValue - aValue;
+        };
+
+        // 配列をソート
+        const contestData = [...g_contestData];
+        contestData.sort(sortByObjValue);
+
+        setupTable(contestData, g_predictionData, g_resultData, g_userData);
+    }
+
+    function clearSortTable() {
+        setupTable(g_contestData, g_predictionData, g_resultData, g_userData);
+    }
+
     function removeColumnsAfter(tableId, startCol) {
         // Get the table
         var table = document.getElementById(tableId);
@@ -218,6 +264,7 @@
                         g_contestData = contestData;
                         g_resultData = resultData;
                         g_userData = usersData;
+                        g_predictionData = predictionData;
                         setupTable(contestData, predictionData, resultData, usersData);
                     });
                 });
@@ -228,6 +275,7 @@
     // Refresh data and update table
     function refreshData() {
         loadJSON('prediction.json', function(predictionData) {
+            g_predictionData = predictionData;
             setupTable(g_contestData, predictionData, g_resultData, g_userData);
         });
     }
@@ -248,6 +296,9 @@
     }
     .highlight {
         background-color: rgb(231, 228, 255);
+    }
+    .usersort {
+        margin-right: 5px;
     }
     th {
         background-color: rgb(40, 8, 131);
@@ -270,12 +321,12 @@
         z-index: 5;
     }
     td.sticky {
-        background-color: rgb(248, 235, 226);
+        background-color: rgb(250, 250, 250);
         z-index: 3;
         position: sticky;
     }
     td.prize {
-        background-color: rgb(207, 255, 255);
+        background-color: rgb(230, 255, 255);
     }
     th.rank, td.rank {
         left: 0;
@@ -304,6 +355,10 @@
     }
     th, td {
         border: 1px solid Gray;
+    }
+    td.selected_user {
+        background-color: rgb(255, 220, 220);
+        font-weight: bold;
     }
     div.table-container {
         max-width: 98vw;
