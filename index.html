@@ -75,6 +75,7 @@
 
     // Function to convert grade number to Japanese format
     function convertGradeToJapanese(grade) {
+        if(grade === 0) return `未`;
         if(grade >= 4) return `高${grade-3}`;
         else return `中${grade}`;
     }
