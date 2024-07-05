@@ -34,6 +34,28 @@
 </body>
 
 <script>
+    function updateViewport() {
+        let viewportMeta = document.querySelector("meta[name=viewport]");
+        if (!viewportMeta) {
+            viewportMeta = document.createElement('meta');
+            viewportMeta.name = "viewport";
+            document.head.appendChild(viewportMeta);
+        }
+
+        const width = window.innerWidth;
+        if (width <= 600) {
+            viewportMeta.content = "width=device-width, initial-scale=0.6";
+        } else if (width <= 1024) {
+            viewportMeta.content = "width=device-width, initial-scale=1.0";
+        } else {
+            viewportMeta.content = "width=device-width, initial-scale=1.2";
+        }
+    }
+    // 初期設定
+    updateViewport();
+
+    // 画面リサイズ時にviewportを調整
+    window.addEventListener('resize', updateViewport);
 
     let g_resultData = null;
     let g_userData = null;
@@ -137,6 +159,7 @@
                 sortButton.textContent = "#";
                 sortButton.addEventListener("click", () => {
                     g_selectedContest = null;
+                    clearSortTable();
                 });
             }else{
                 sortButton.textContent = "v";
