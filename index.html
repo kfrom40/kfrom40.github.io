@@ -62,6 +62,7 @@
             mergedData[userName] = {};
             mergedData[userName].UserName = userName;
             mergedData[userName].Grade = usersObject[userName].Grade;
+            mergedData[userName].Rate = usersObject[userName].Rate;
             for (const [key, value] of Object.entries(data)) {
                 mergedData[userName][key] = value;
             }
@@ -140,7 +141,21 @@
             sortButton.classList.add("usersort");
 
             tdUserName.appendChild(sortButton); // ボタンを先に追加
-            tdUserName.appendChild(document.createTextNode(userData.UserName)); // 次に名前の文字列を追加
+
+            const link = document.createElement("a");
+            link.href = "https://atcoder.jp/users/" + userData.UserName;
+            link.textContent = userData.UserName;
+            link.target = "_blank";
+            tdUserName.appendChild(link); // 次に名前の文字列を追加
+            
+            if(userData.Rate < 400) tdUserName.classList.add("gray");
+            else if(userData.Rate < 800) tdUserName.classList.add("brown");
+            else if(userData.Rate < 1200) tdUserName.classList.add("green");
+            else if(userData.Rate < 1600) tdUserName.classList.add("lightblue");
+            else if(userData.Rate < 2000) tdUserName.classList.add("blue");
+            else if(userData.Rate < 2400) tdUserName.classList.add("yellow");
+            else if(userData.Rate < 2800) tdUserName.classList.add("orange");
+            else if(userData.Rate >= 2800) tdUserName.classList.add("red");
 
             tr.appendChild(tdUserName);
 
@@ -167,7 +182,6 @@
                 tdGrade.classList.add("prize");
                 tdTotal.classList.add("prize");
             }
-
             (testNameData || []).forEach(test => {
                 const td = document.createElement("td");
                 if (userData[test] !== undefined) {
@@ -321,12 +335,12 @@
         z-index: 5;
     }
     td.sticky {
-        background-color: rgb(250, 250, 250);
+        background-color: rgb(255, 250, 250);
         z-index: 3;
         position: sticky;
     }
     td.prize {
-        background-color: rgb(230, 255, 255);
+        background-color: rgb(245, 255, 255);
     }
     th.rank, td.rank {
         left: 0;
@@ -370,6 +384,22 @@
     body {
         min-height: 100vh;
     }
+    a {
+        color: inherit; /* 親要素の色を継承 */
+        text-decoration: none; /* アンダーラインをなくす */
+    }
+    a:hover {
+        text-decoration: none; /* ホバー時もアンダーラインをなくす */
+    }
+    .gray {color: #808080}
+    .brown {color: #804000}
+    .green {color: #008000}
+    .lightblue {color: #00C0C0}
+    .blue {color: #0000FF}
+    .yellow {color: #C0C000}
+    .orange {color: #FF8000}
+    .red {color: #FF0000}
+    
 </style>
 
 </html>
