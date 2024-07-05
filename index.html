@@ -40,6 +40,7 @@
     let g_contestData = null;
     let g_predictionData = null;
     let g_selectedUser = null;
+    let g_selectedContest = null;
 
     // Function to load JSON data asynchronously
     function loadJSON(filename, callback) {
@@ -81,15 +82,25 @@
     }
 
     // Setup table with loaded data
-    function setupTable(testNameData, json1Data, json2Data, usersData) {
+    function setupTable(contestNameData, json1Data, json2Data, usersData) {
         const allData = Object.assign(json1Data, json2Data);
 
+        // 列のソート
+        if(g_selectedUser !== null) {
+            const userData = g_predictionData[g_selectedUser];
+            const sortByObjValue = (a, b) => {
+                const aValue = userData[a] !== undefined ? Number(userData[a]) : -Infinity;
+                const bValue = userData[b] !== undefined ? Number(userData[b]) : -Infinity;
+                return bValue - aValue;
+            };
+            contestNameData.sort(sortByObjValue);
+        }
         const mergedData = mergeData(allData, usersData);
 
         // Calculate total of the top 3 scores after transformation and sort by descending total
         mergedData.forEach(userData => {
             const scores = [];
-            (testNameData || []).forEach(test => {
+            (contestNameData || []).forEach(test => {
                 if (userData[test] !== undefined) {
                     const transformedScore = Math.pow(2, userData[test] / 400) * 1000;
                     scores.push({ score: transformedScore, test: test });
@@ -101,17 +112,39 @@
             userData.topScores = scores.slice(0, 6).map(score => score.test); // Store top 6 tests
         });
 
-        mergedData.sort((a, b) => b.total - a.total);
+        if(g_selectedContest === null) {
+            mergedData.sort((a, b) => b.total - a.total);
+        }else{
+            mergedData.sort((a, b) => {
+                const aValue = a[g_selectedContest] !== undefined ? Number(a[g_selectedContest]) : -Infinity;
+                const bValue = b[g_selectedContest] !== undefined ? Number(b[g_selectedContest]) : -Infinity;
+                return bValue - aValue;
+            });
+        }
 
         // Populate table header
         const headerRow = document.getElementById("headerRow");
 
         removeColumnsAfter('resultsTable', 4);
 
-        (testNameData || []).forEach(test => {
+        (contestNameData || []).forEach(contestName => {
             const th = document.createElement("th");
             th.classList.add("contest");
-            th.textContent = test;
+            th.textContent = contestName;
+            const sortButton = document.createElement("button");
+            if(g_selectedContest === contestName) {
+                th.classList.add("selectedcontest");
+                sortButton.textContent = "#";
+                sortButton.addEventListener("click", () => {
+                    g_selectedContest = null;
+                });
+            }else{
+                sortButton.textContent = "v";
+                sortButton.addEventListener("click", () => {
+                    sortTableByContest(contestName);
+                });
+            }
+            th.appendChild(sortButton);
             headerRow.appendChild(th);
         });
 
@@ -184,7 +217,7 @@
                 tdGrade.classList.add("prize");
                 tdTotal.classList.add("prize");
             }
-            (testNameData || []).forEach(test => {
+            (contestNameData || []).forEach(test => {
                 const td = document.createElement("td");
                 if (userData[test] !== undefined) {
                     const transformedScore = userData[test + "_transformed"];
@@ -237,25 +270,16 @@
 
     function sortTableByUserName(userName) {
 
-        const userData = g_predictionData[userName];
         g_selectedUser = userName;
-
-        // ソート用の関数
-        const sortByObjValue = (a, b) => {
-            // `obj` に存在しないキーは値を -Infinity にする
-            const aValue = userData[a] !== undefined ? Number(userData[a]) : -Infinity;
-            const bValue = userData[b] !== undefined ? Number(userData[b]) : -Infinity;
-            return bValue - aValue;
-        };
-
-        // 配列をソート
-        const contestData = [...g_contestData];
-        contestData.sort(sortByObjValue);
-
-        setupTable(contestData, g_predictionData, g_resultData, g_userData);
+        setupTable(g_contestData, g_predictionData, g_resultData, g_userData);
     }
 
     function clearSortTable() {
+        setupTable(g_contestData, g_predictionData, g_resultData, g_userData);
+    }
+
+    function sortTableByContest(contestName) {
+        g_selectedContest = contestName;
         setupTable(g_contestData, g_predictionData, g_resultData, g_userData);
     }
 
@@ -324,6 +348,9 @@
         position: sticky;
         top: 0;
         z-index: 4;
+    }
+    th.selectedcontest {
+        background-color: rgb(80, 80, 220);
     }
     td {
         padding-left: 6px;
