@@ -103,7 +103,7 @@
 
     // Setup table with loaded data
     function setupTable(contestNameData, json1Data, json2Data, usersData) {
-        const allData = Object.assign(json1Data, json2Data);
+        const allData = mergeDeeply(json1Data, json2Data);
 
         // 列のソート
         if(g_selectedUser !== null) {
@@ -341,6 +341,27 @@
             g_predictionData = predictionData;
             setupTable(g_contestData, predictionData, g_resultData, g_userData);
         });
+    }
+
+    function mergeDeeply(target, source, opts) {
+        const isObject = obj => obj && typeof obj === 'object' && !Array.isArray(obj);
+        const isConcatArray = opts && opts.concatArray;
+        let result = Object.assign({}, target);
+        if (isObject(target) && isObject(source)) {
+            for (const [sourceKey, sourceValue] of Object.entries(source)) {
+                const targetValue = target[sourceKey];
+                if (isConcatArray && Array.isArray(sourceValue) && Array.isArray(targetValue)) {
+                    result[sourceKey] = targetValue.concat(...sourceValue);
+                }
+                else if (isObject(sourceValue) && target.hasOwnProperty(sourceKey)) {
+                    result[sourceKey] = mergeDeeply(targetValue, sourceValue, opts);
+                }
+                else {
+                    Object.assign(result, {[sourceKey]: sourceValue});
+                }
+            }
+        }
+        return result;
     }
 
     document.getElementById('refreshButton').addEventListener('click', refreshData);
