@@ -107,7 +107,7 @@
 
         // 列のソート
         if(g_selectedUser !== null) {
-            const userData = g_predictionData[g_selectedUser];
+            const userData = allData[g_selectedUser];
             const sortByObjValue = (a, b) => {
                 const aValue = userData[a] !== undefined ? Number(userData[a]) : -Infinity;
                 const bValue = userData[b] !== undefined ? Number(userData[b]) : -Infinity;
@@ -233,7 +233,7 @@
             }
 
             if(rank <= 20) {
-                tdRank.classList.add("prize");
+                tdRank.classList.add("prize-rank");
                 tdUserName.classList.add("prize");
                 tdGrade.classList.add("prize");
                 tdTotal.classList.add("prize");
@@ -414,6 +414,9 @@
     }
     td.prize {
         background-color: rgb(245, 255, 255);
+    }
+    td.prize-rank {
+        background-color: rgb(66, 163, 201);
     }
     th.rank, td.rank {
         left: 0;
