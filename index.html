@@ -64,16 +64,22 @@
 
     // Function to load JSON data asynchronously
     function loadJSON(filename, callback) {
-        let xhr = new XMLHttpRequest();
-        const url_prefix = "https://kfrom40.qeq.jp/ajl2024summer/";
-        xhr.overrideMimeType("application/json");
-        xhr.open('GET', url_prefix + filename, true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                callback(JSON.parse(xhr.responseText));
-            }
-        };
-        xhr.send(null);
+        return new Promise((resolve, reject) => {
+            let xhr = new XMLHttpRequest();
+            const url_prefix = "https://kfrom40.qeq.jp/ajl2024summer/";
+            xhr.overrideMimeType("application/json");
+            xhr.open('GET', url_prefix + filename, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        resolve(JSON.parse(xhr.responseText));
+                    } else {
+                        reject(`Failed to load ${filename}`);
+                    }
+                }
+            };
+            xhr.send(null);
+        });
     }
 
     // Function to merge JSON data by UserName
@@ -130,8 +136,12 @@
             });
             scores.sort((a, b) => b.score - a.score);
             userData.total = scores.slice(0, 6).reduce((acc, score) => acc + score.score, 0);
-            userData.topScores = scores.slice(0, 6).map(score => score.test); // Store top 6 tests
-        });
+            userData.topScores = scores.slice(0, 6).map(score => score.test).reduce(
+                (acc, test) => {
+                    acc[test] = true;
+                    return acc;
+                }, {});
+            });
 
         if(g_selectedContest === null) {
             mergedData.sort((a, b) => b.total - a.total);
@@ -247,7 +257,7 @@
                     const transformedScore = userData[test + "_transformed"];
                     td.textContent = `${transformedScore.toFixed(0)} (${userData[test]})`;
                     td.classList.add("contest");
-                    if (userData.topScores.includes(test)) {
+                    if (test in userData.topScores) {
                         td.classList.add("highlight"); // Highlight top 3 scores
                     }
                 } else {
@@ -307,19 +317,22 @@
 
     // Initial load
     function initialLoad() {
-        // Load all necessary JSON files
-        loadJSON('contest.json', function(contestData) {
-            loadJSON('prediction.json', function(predictionData) {
-                loadJSON('result.json', function(resultData) {
-                    loadJSON('member.json', function(usersData) {
-                        g_contestData = contestData;
-                        g_resultData = resultData;
-                        g_userData = usersData;
-                        g_predictionData = predictionData;
-                        setupTable(contestData, predictionData, resultData, usersData);
-                    });
-                });
-            });
+        // Load all necessary JSON files in parallel
+        Promise.all([
+            loadJSON('contest.json'),
+            loadJSON('prediction.json'),
+            loadJSON('result.json'),
+            loadJSON('member.json')
+        ])
+        .then(([contestData, predictionData, resultData, usersData]) => {
+            g_contestData = contestData;
+            g_resultData = resultData;
+            g_userData = usersData;
+            g_predictionData = predictionData;
+            setupTable();
+        })
+        .catch(error => {
+            console.error("Error loading JSON data:", error);
         });
     }
 
