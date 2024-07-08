@@ -81,6 +81,7 @@
         const mergedData = {};
 
         for (const [userName, data] of Object.entries(dataObject)) {
+            if(usersObject[userName] === undefined) continue;
             mergedData[userName] = {};
             mergedData[userName].UserName = userName;
             mergedData[userName].Grade = usersObject[userName].Grade;
@@ -102,9 +103,9 @@
     }
 
     // Setup table with loaded data
-    function setupTable(contestNameData, json1Data, json2Data, usersData) {
-        const allData = mergeDeeply(json1Data, json2Data);
-
+    function setupTable() {
+        const allData = mergeResult(structuredClone(g_resultData), g_predictionData);
+        const contestNameData = structuredClone(g_contestData);
         // 列のソート
         if(g_selectedUser !== null) {
             const userData = allData[g_selectedUser];
@@ -115,7 +116,7 @@
             };
             contestNameData.sort(sortByObjValue);
         }
-        const mergedData = mergeData(allData, usersData);
+        const mergedData = mergeData(allData, g_userData);
 
         // Calculate total of the top 3 scores after transformation and sort by descending total
         mergedData.forEach(userData => {
@@ -157,12 +158,13 @@
                 sortButton.textContent = "#";
                 sortButton.addEventListener("click", () => {
                     g_selectedContest = null;
-                    clearSortTable();
+                    setupTable();
                 });
             }else{
                 sortButton.textContent = "v";
                 sortButton.addEventListener("click", () => {
-                    sortTableByContest(contestName);
+                    g_selectedContest = contestName;
+                    setupTable();
                 });
             }
             th.appendChild(sortButton);
@@ -186,12 +188,13 @@
                 sortButton.textContent = "#";
                 sortButton.addEventListener("click", () => {
                     g_selectedUser = null;
-                    clearSortTable();
+                    setupTable();
                 });
             } else {
                 sortButton.textContent = ">";
                 sortButton.addEventListener("click", () => {
-                    sortTableByUserName(userData.UserName);
+                    g_selectedUser = userData.UserName;
+                    setupTable();
                 });
             }
             sortButton.classList.add("usersort");
@@ -289,21 +292,6 @@
 
     }
 
-    function sortTableByUserName(userName) {
-
-        g_selectedUser = userName;
-        setupTable(g_contestData, g_predictionData, g_resultData, g_userData);
-    }
-
-    function clearSortTable() {
-        setupTable(g_contestData, g_predictionData, g_resultData, g_userData);
-    }
-
-    function sortTableByContest(contestName) {
-        g_selectedContest = contestName;
-        setupTable(g_contestData, g_predictionData, g_resultData, g_userData);
-    }
-
     function removeColumnsAfter(tableId, startCol) {
         // Get the table
         var table = document.getElementById(tableId);
@@ -343,22 +331,13 @@
         });
     }
 
-    function mergeDeeply(target, source, opts) {
-        const isObject = obj => obj && typeof obj === 'object' && !Array.isArray(obj);
-        const isConcatArray = opts && opts.concatArray;
-        let result = Object.assign({}, target);
-        if (isObject(target) && isObject(source)) {
-            for (const [sourceKey, sourceValue] of Object.entries(source)) {
-                const targetValue = target[sourceKey];
-                if (isConcatArray && Array.isArray(sourceValue) && Array.isArray(targetValue)) {
-                    result[sourceKey] = targetValue.concat(...sourceValue);
-                }
-                else if (isObject(sourceValue) && target.hasOwnProperty(sourceKey)) {
-                    result[sourceKey] = mergeDeeply(targetValue, sourceValue, opts);
-                }
-                else {
-                    Object.assign(result, {[sourceKey]: sourceValue});
-                }
+    function mergeResult(result, prediction) {
+        for (const [key, value] of Object.entries(prediction)) {
+            const resultValue = result[key];
+            if (resultValue === undefined) {
+                result[key] = value;
+            } else if(typeof value === 'object') {
+                result[key] = mergeResult(resultValue, value);
             }
         }
         return result;
