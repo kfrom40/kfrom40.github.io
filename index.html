@@ -22,7 +22,7 @@
             <thead>
                 <tr id="headerRow">
                     <th class="sticky rank">Rank</th>
-                    <th class="sticky username">UserName</th>
+                    <th class="sticky username">UserId</th>
                     <th class="sticky grade">Grade</th>
                     <th class="sticky total">Total</th>
                 </tr>
@@ -155,8 +155,9 @@
 
         // Populate table header
         const headerRow = document.getElementById("headerRow");
-
-        removeColumnsAfter('resultsTable', 4);
+        document.querySelectorAll('th.contest').forEach(cell => {
+            cell.remove();
+        });
 
         (contestNameData || []).forEach(contestName => {
             const th = document.createElement("th");
@@ -274,7 +275,11 @@
             const gradeCheckboxes = document.querySelectorAll(".gradeCheckbox");
             const selectedGrades = Array.from(gradeCheckboxes)
                 .filter(checkbox => checkbox.checked)
-                .map(checkbox => checkbox.value);
+                .map(checkbox => checkbox.value)
+                .reduce((acc, value) => {
+                    acc[value] = true;
+                    return acc;
+                }, []);
 
             // Clear existing rows
             const tbody = document.getElementById("resultsTable").querySelector("tbody");
@@ -283,7 +288,7 @@
             // Filter data based on selected grades
             const filteredData = selectedGrades.length === 0 
                 ? mergedData 
-                : mergedData.filter(user => selectedGrades.includes(String(user.Grade)));
+                : mergedData.filter(user => user.Grade in selectedGrades);
 
             // Populate table rows
             filteredData.forEach((userData, index) => {
@@ -295,24 +300,12 @@
 
         // Initial table population
         populateTable();
+        console.timeEnd('timer');
 
         // Event listener for grade filter change
         const gradeCheckboxes = document.querySelectorAll(".gradeCheckbox");
         gradeCheckboxes.forEach(checkbox => checkbox.addEventListener("change", populateTable));
 
-    }
-
-    function removeColumnsAfter(tableId, startCol) {
-        // Get the table
-        var table = document.getElementById(tableId);
-        
-        // Loop through each row
-        table.querySelectorAll('tr').forEach(row => {
-            // Loop through the cells in reverse order and remove those that are beyond startCol
-            for (let i = row.cells.length - 1; i >= startCol; i--) {
-                row.cells[i].remove();
-            }
-        });
     }
 
     // Initial load
@@ -417,6 +410,8 @@
     th.username, td.username {
         left: 50px; /* Adjust as per your requirement */
         width: 159px;
+    }
+    td.username {
         font-weight: bold;
         font-size:smaller;
     }
@@ -430,6 +425,9 @@
     }
     th.contest, td.contest {
         width: 125px;
+    }
+    th.contest > button {
+        margin-left: 10px;
     }
     table {
         border-collapse: separate;
