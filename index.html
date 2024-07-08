@@ -21,10 +21,6 @@
         <table id="resultsTable">
             <thead>
                 <tr id="headerRow">
-                    <th class="sticky rank">Rank</th>
-                    <th class="sticky username">UserId</th>
-                    <th class="sticky grade">Grade</th>
-                    <th class="sticky total">Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -60,7 +56,7 @@
     let g_contestData = null;
     let g_predictionData = null;
     let g_selectedUser = null;
-    let g_selectedContest = null;
+    let g_col_sort = null;
 
     // Function to load JSON data asynchronously
     function loadJSON(filename, callback) {
@@ -143,38 +139,79 @@
                 }, {});
             });
 
-        if(g_selectedContest === null) {
-            mergedData.sort((a, b) => b.total - a.total);
-        }else{
+        if(g_col_sort === 'username') {
             mergedData.sort((a, b) => {
-                const aValue = a[g_selectedContest] !== undefined ? Number(a[g_selectedContest]) : -Infinity;
-                const bValue = b[g_selectedContest] !== undefined ? Number(b[g_selectedContest]) : -Infinity;
-                return bValue - aValue;
+                return b['Rate'] - a['Rate'];
             });
+        }else{
+            if(g_col_sort === null) {
+                mergedData.sort((a, b) => b.total - a.total);
+            }else{
+                mergedData.sort((a, b) => {
+                    const aValue = a[g_col_sort] !== undefined ? Number(a[g_col_sort]) : -Infinity;
+                    const bValue = b[g_col_sort] !== undefined ? Number(b[g_col_sort]) : -Infinity;
+                    return bValue - aValue;
+                });
+            }
         }
 
         // Populate table header
         const headerRow = document.getElementById("headerRow");
-        document.querySelectorAll('th.contest').forEach(cell => {
-            cell.remove();
-        });
+        headerRow.innerHTML = "";
+
+        const thRank = document.createElement("th");
+        thRank.classList.add("sticky","rank");
+        thRank.textContent = "順位";
+        headerRow.appendChild(thRank);
+
+        const thUserName = document.createElement("th");
+        thUserName.classList.add("sticky","username");
+        thUserName.textContent = "ユーザーID";
+        const sortButton = document.createElement("button");
+        if(g_col_sort === 'username') {
+            thUserName.classList.add("selectedcontest");
+            sortButton.textContent = "#";
+            sortButton.addEventListener("click", () => {
+                g_col_sort = null;
+                setupTable();
+            });
+        }else{
+            sortButton.textContent = "v";
+            sortButton.addEventListener("click", () => {
+                g_col_sort = 'username';
+                setupTable();
+            });
+        }
+
+        thUserName.appendChild(sortButton);
+        headerRow.appendChild(thUserName);
+
+        const thGrade = document.createElement("th");
+        thGrade.classList.add("sticky","grade");
+        thGrade.textContent = "学年";
+        headerRow.appendChild(thGrade);
+
+        const thTotal = document.createElement("th");
+        thTotal.classList.add("sticky","total");
+        thTotal.textContent = "スコア";
+        headerRow.appendChild(thTotal);
 
         (contestNameData || []).forEach(contestName => {
             const th = document.createElement("th");
             th.classList.add("contest");
             th.textContent = contestName;
             const sortButton = document.createElement("button");
-            if(g_selectedContest === contestName) {
+            if(g_col_sort === contestName) {
                 th.classList.add("selectedcontest");
                 sortButton.textContent = "#";
                 sortButton.addEventListener("click", () => {
-                    g_selectedContest = null;
+                    g_col_sort = null;
                     setupTable();
                 });
             }else{
                 sortButton.textContent = "v";
                 sortButton.addEventListener("click", () => {
-                    g_selectedContest = contestName;
+                    g_col_sort = contestName;
                     setupTable();
                 });
             }
@@ -300,7 +337,6 @@
 
         // Initial table population
         populateTable();
-        console.timeEnd('timer');
 
         // Event listener for grade filter change
         const gradeCheckboxes = document.querySelectorAll(".gradeCheckbox");
