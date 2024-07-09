@@ -13,8 +13,9 @@
         <label><input type="checkbox" class="gradeCheckbox" value="4"> 高1 </label>
         <label><input type="checkbox" class="gradeCheckbox" value="5"> 高2 </label>
         <label><input type="checkbox" class="gradeCheckbox" value="6"> 高3 </label>
+        <label><input type="checkbox" class="bestCheckbox"> 成績順 </label>
+        <label><input type="checkbox" class="colorCheckbox"> 色 </label>
         <button id="refreshButton">更新</button>
-        <label><input type="checkbox" class="onlyBest6Checkbox" value="6"> 上位6コンテストのみ表示 </label>
     </div>
         
     <div class="table-container">
@@ -58,7 +59,8 @@
     let g_predictionData = null;
     let g_selectedUser = null;
     let g_col_sort = null;
-    let g_onlyBest6 = false;
+    let g_view_best = false;
+    let g_view_color = false;
 
     // Function to load JSON data asynchronously
     function loadJSON(filename, callback) {
@@ -133,6 +135,7 @@
                 }
             });
             scores.sort((a, b) => b.score - a.score);
+            userData.sortedScores = scores;
             userData.total = scores.slice(0, 6).reduce((acc, score) => acc + score.score, 0);
             userData.topScores = scores.slice(0, 6).reduce((acc, score) => {
                 acc[score.contest] = { score: score.score, perf: score.perf, contest:score.contest };
@@ -197,8 +200,8 @@
         thTotal.textContent = "スコア";
         headerRow.appendChild(thTotal);
 
-        if(g_onlyBest6) {
-            for(let i = 1; i <= 6; i++) {
+        if(g_view_best) {
+            for(let i = 1; i <= contestNameData.length; i++) {
                 const th = document.createElement("th");
                 th.classList.add("contest");
                 th.textContent = "Best" + i;
@@ -264,15 +267,7 @@
             link.textContent = userData.UserName;
             link.target = "_blank";
             tdUserName.appendChild(link); // 次に名前の文字列を追加
-            
-            if(userData.Rate < 400) tdUserName.classList.add("gray");
-            else if(userData.Rate < 800) tdUserName.classList.add("brown");
-            else if(userData.Rate < 1200) tdUserName.classList.add("green");
-            else if(userData.Rate < 1600) tdUserName.classList.add("lightblue");
-            else if(userData.Rate < 2000) tdUserName.classList.add("blue");
-            else if(userData.Rate < 2400) tdUserName.classList.add("yellow");
-            else if(userData.Rate < 2800) tdUserName.classList.add("orange");
-            else if(userData.Rate >= 2800) tdUserName.classList.add("red");
+            tdUserName.classList.add(color(userData.Rate));
 
             tr.appendChild(tdUserName);
 
@@ -300,20 +295,17 @@
                 tdTotal.classList.add("prize");
             }
 
-            if(g_onlyBest6) {
-                Object.values(userData.topScores).forEach(contestData => {
+            if(g_view_best) {
+                Object.values(userData.sortedScores).forEach(contestData => {
                     const td = document.createElement("td");
                     td.textContent = `${contestData.score.toFixed(0)} (${contestData.perf})`;
                     td.title = `${contestData.contest}`;
                     td.classList.add("contest");
-                    if(contestData.perf < 400) td.classList.add("bg-gray");
-                    else if(contestData.perf < 800) td.classList.add("bg-brown");
-                    else if(contestData.perf < 1200) td.classList.add("bg-green");
-                    else if(contestData.perf < 1600) td.classList.add("bg-lightblue");
-                    else if(contestData.perf < 2000) td.classList.add("bg-blue");
-                    else if(contestData.perf < 2400) td.classList.add("bg-yellow");
-                    else if(contestData.perf < 2800) td.classList.add("bg-orange");
-                    else if(contestData.perf >= 2800) td.classList.add("bg-red");
+                    if(g_view_color) {
+                        td.classList.add("bg-" + color(contestData.perf));
+                    }else if(contestData.contest in userData.topScores) {
+                        td.classList.add("highlight"); // Highlight top 3 scores
+                    }
                     tr.appendChild(td);                    
                 });
             } else {
@@ -323,7 +315,9 @@
                         const transformedScore = userData[contest + "_transformed"];
                         td.textContent = `${transformedScore.toFixed(0)} (${userData[contest]})`;
                         td.classList.add("contest");
-                        if (contest in userData.topScores) {
+                        if(g_view_color) {
+                            td.classList.add("bg-" + color(userData[contest]));
+                        }else if (contest in userData.topScores) {
                             td.classList.add("highlight"); // Highlight top 3 scores
                         }
                     } else {
@@ -334,6 +328,18 @@
             }
 
             return tr;
+        }
+
+        function color(rate) {
+            if(rate === 0) return "black";
+            else if(rate < 400) return "gray";
+            else if(rate < 800) return "brown";
+            else if(rate < 1200) return "green";
+            else if(rate < 1600) return "lightblue";
+            else if(rate < 2000) return "blue";
+            else if(rate < 2400) return "yellow";
+            else if(rate < 2800) return "orange";
+            else return "red";
         }
 
         // Populate table body based on grade filter
@@ -374,10 +380,15 @@
     const gradeCheckboxes = document.querySelectorAll(".gradeCheckbox");
     gradeCheckboxes.forEach(checkbox => checkbox.addEventListener("change", setupTable));
 
-    document.querySelector(".onlyBest6Checkbox").addEventListener("change", function() {
+    document.querySelector(".bestCheckbox").addEventListener("change", function() {
         g_col_sort = null;
         g_selectedUser = null;
-        g_onlyBest6 = this.checked;
+        g_view_best = this.checked;
+        setupTable();
+    });
+
+    document.querySelector(".colorCheckbox").addEventListener("change", function() {
+        g_view_color = this.checked;
         setupTable();
     });
 
