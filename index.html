@@ -14,6 +14,7 @@
         <label><input type="checkbox" class="gradeCheckbox" value="5"> 高2 </label>
         <label><input type="checkbox" class="gradeCheckbox" value="6"> 高3 </label>
         <button id="refreshButton">更新</button>
+        <label><input type="checkbox" class="onlyBest6Checkbox" value="6"> 上位6コンテストのみ表示 </label>
     </div>
         
     <div class="table-container">
@@ -57,6 +58,7 @@
     let g_predictionData = null;
     let g_selectedUser = null;
     let g_col_sort = null;
+    let g_onlyBest6 = false;
 
     // Function to load JSON data asynchronously
     function loadJSON(filename, callback) {
@@ -126,18 +128,17 @@
             (contestNameData || []).forEach(test => {
                 if (userData[test] !== undefined) {
                     const transformedScore = Math.pow(2, userData[test] / 400) * 1000;
-                    scores.push({ score: transformedScore, test: test });
+                    scores.push({ score: transformedScore, test: test, perf: userData[test] });
                     userData[test + "_transformed"] = transformedScore;
                 }
             });
             scores.sort((a, b) => b.score - a.score);
             userData.total = scores.slice(0, 6).reduce((acc, score) => acc + score.score, 0);
-            userData.topScores = scores.slice(0, 6).map(score => score.test).reduce(
-                (acc, test) => {
-                    acc[test] = true;
-                    return acc;
-                }, {});
-            });
+            userData.topScores = scores.slice(0, 6).reduce((acc, score) => {
+                acc[score.test] = { score: score.score, perf: score.perf };
+                return acc;
+            }, {});
+        });
 
         if(g_col_sort === 'username') {
             mergedData.sort((a, b) => {
@@ -196,28 +197,37 @@
         thTotal.textContent = "スコア";
         headerRow.appendChild(thTotal);
 
-        (contestNameData || []).forEach(contestName => {
-            const th = document.createElement("th");
-            th.classList.add("contest");
-            th.textContent = contestName;
-            const sortButton = document.createElement("button");
-            if(g_col_sort === contestName) {
-                th.classList.add("selectedcontest");
-                sortButton.textContent = "#";
-                sortButton.addEventListener("click", () => {
-                    g_col_sort = null;
-                    setupTable();
-                });
-            }else{
-                sortButton.textContent = "v";
-                sortButton.addEventListener("click", () => {
-                    g_col_sort = contestName;
-                    setupTable();
-                });
+        if(g_onlyBest6) {
+            for(let i = 1; i <= 6; i++) {
+                const th = document.createElement("th");
+                th.classList.add("contest");
+                th.textContent = "Best" + i;
+                headerRow.appendChild(th);
             }
-            th.appendChild(sortButton);
-            headerRow.appendChild(th);
-        });
+        } else {
+            (contestNameData || []).forEach(contestName => {
+                const th = document.createElement("th");
+                th.classList.add("contest");
+                th.textContent = contestName;
+                const sortButton = document.createElement("button");
+                if(g_col_sort === contestName) {
+                    th.classList.add("selectedcontest");
+                    sortButton.textContent = "#";
+                    sortButton.addEventListener("click", () => {
+                        g_col_sort = null;
+                        setupTable();
+                    });
+                }else{
+                    sortButton.textContent = "v";
+                    sortButton.addEventListener("click", () => {
+                        g_col_sort = contestName;
+                        setupTable();
+                    });
+                }
+                th.appendChild(sortButton);
+                headerRow.appendChild(th);
+            });
+        }
 
         // Function to create table row
         function createTableRow(userData, rank) {
@@ -289,20 +299,31 @@
                 tdGrade.classList.add("prize");
                 tdTotal.classList.add("prize");
             }
-            (contestNameData || []).forEach(test => {
-                const td = document.createElement("td");
-                if (userData[test] !== undefined) {
-                    const transformedScore = userData[test + "_transformed"];
-                    td.textContent = `${transformedScore.toFixed(0)} (${userData[test]})`;
+
+            if(g_onlyBest6) {
+                Object.values(userData.topScores).forEach(test => {
+                    const td = document.createElement("td");
+                    td.textContent = `${test.score.toFixed(0)} (${test.perf})`;
                     td.classList.add("contest");
-                    if (test in userData.topScores) {
-                        td.classList.add("highlight"); // Highlight top 3 scores
+                    td.classList.add("highlight"); // Highlight top 3 scores
+                    tr.appendChild(td);                    
+                });
+            } else {
+                (contestNameData || []).forEach(test => {
+                    const td = document.createElement("td");
+                    if (userData[test] !== undefined) {
+                        const transformedScore = userData[test + "_transformed"];
+                        td.textContent = `${transformedScore.toFixed(0)} (${userData[test]})`;
+                        td.classList.add("contest");
+                        if (test in userData.topScores) {
+                            td.classList.add("highlight"); // Highlight top 3 scores
+                        }
+                    } else {
+                        td.textContent = "";
                     }
-                } else {
-                    td.textContent = "";
-                }
-                tr.appendChild(td);
-            });
+                    tr.appendChild(td);
+                });
+            }
 
             return tr;
         }
@@ -338,11 +359,19 @@
         // Initial table population
         populateTable();
 
-        // Event listener for grade filter change
-        const gradeCheckboxes = document.querySelectorAll(".gradeCheckbox");
-        gradeCheckboxes.forEach(checkbox => checkbox.addEventListener("change", populateTable));
 
     }
+
+    // Event listener for grade filter change
+    const gradeCheckboxes = document.querySelectorAll(".gradeCheckbox");
+    gradeCheckboxes.forEach(checkbox => checkbox.addEventListener("change", setupTable));
+
+    document.querySelector(".onlyBest6Checkbox").addEventListener("change", function() {
+        g_col_sort = null;
+        g_selectedUser = null;
+        g_onlyBest6 = this.checked;
+        setupTable();
+    });
 
     // Initial load
     function initialLoad() {
