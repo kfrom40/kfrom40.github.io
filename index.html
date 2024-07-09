@@ -125,17 +125,17 @@
         // Calculate total of the top 3 scores after transformation and sort by descending total
         mergedData.forEach(userData => {
             const scores = [];
-            (contestNameData || []).forEach(test => {
-                if (userData[test] !== undefined) {
-                    const transformedScore = Math.pow(2, userData[test] / 400) * 1000;
-                    scores.push({ score: transformedScore, test: test, perf: userData[test] });
-                    userData[test + "_transformed"] = transformedScore;
+            (contestNameData || []).forEach(contest => {
+                if (userData[contest] !== undefined) {
+                    const transformedScore = Math.pow(2, userData[contest] / 400) * 1000;
+                    scores.push({ score: transformedScore, contest: contest, perf: userData[contest] });
+                    userData[contest + "_transformed"] = transformedScore;
                 }
             });
             scores.sort((a, b) => b.score - a.score);
             userData.total = scores.slice(0, 6).reduce((acc, score) => acc + score.score, 0);
             userData.topScores = scores.slice(0, 6).reduce((acc, score) => {
-                acc[score.test] = { score: score.score, perf: score.perf };
+                acc[score.contest] = { score: score.score, perf: score.perf, contest:score.contest };
                 return acc;
             }, {});
         });
@@ -301,21 +301,22 @@
             }
 
             if(g_onlyBest6) {
-                Object.values(userData.topScores).forEach(test => {
+                Object.values(userData.topScores).forEach(contestData => {
                     const td = document.createElement("td");
-                    td.textContent = `${test.score.toFixed(0)} (${test.perf})`;
+                    td.textContent = `${contestData.score.toFixed(0)} (${contestData.perf})`;
+                    td.title = `${contestData.contest}`;
                     td.classList.add("contest");
                     td.classList.add("highlight"); // Highlight top 3 scores
                     tr.appendChild(td);                    
                 });
             } else {
-                (contestNameData || []).forEach(test => {
+                (contestNameData || []).forEach(contest => {
                     const td = document.createElement("td");
-                    if (userData[test] !== undefined) {
-                        const transformedScore = userData[test + "_transformed"];
-                        td.textContent = `${transformedScore.toFixed(0)} (${userData[test]})`;
+                    if (userData[contest] !== undefined) {
+                        const transformedScore = userData[contest + "_transformed"];
+                        td.textContent = `${transformedScore.toFixed(0)} (${userData[contest]})`;
                         td.classList.add("contest");
-                        if (test in userData.topScores) {
+                        if (contest in userData.topScores) {
                             td.classList.add("highlight"); // Highlight top 3 scores
                         }
                     } else {
