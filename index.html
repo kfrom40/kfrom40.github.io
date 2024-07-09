@@ -306,7 +306,14 @@
                     td.textContent = `${contestData.score.toFixed(0)} (${contestData.perf})`;
                     td.title = `${contestData.contest}`;
                     td.classList.add("contest");
-                    td.classList.add("highlight"); // Highlight top 3 scores
+                    if(contestData.perf < 400) td.classList.add("bg-gray");
+                    else if(contestData.perf < 800) td.classList.add("bg-brown");
+                    else if(contestData.perf < 1200) td.classList.add("bg-green");
+                    else if(contestData.perf < 1600) td.classList.add("bg-lightblue");
+                    else if(contestData.perf < 2000) td.classList.add("bg-blue");
+                    else if(contestData.perf < 2400) td.classList.add("bg-yellow");
+                    else if(contestData.perf < 2800) td.classList.add("bg-orange");
+                    else if(contestData.perf >= 2800) td.classList.add("bg-red");
                     tr.appendChild(td);                    
                 });
             } else {
@@ -533,6 +540,15 @@
     .yellow {color: #C0C000}
     .orange {color: #FF8000}
     .red {color: #FF0000}
+
+    .bg-gray {background-color: #80808050}
+    .bg-brown {background-color: #80400050}
+    .bg-green {background-color: #00800050}
+    .bg-lightblue {background-color: #00C0C050}
+    .bg-blue {background-color: #0000FF50}
+    .bg-yellow {background-color: #C0C00050}
+    .bg-orange {background-color: #FF800050}
+    .bg-red {background-color: #FF000050}
 
     #headerBackground {
         width: 350px;
