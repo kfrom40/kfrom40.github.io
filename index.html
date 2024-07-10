@@ -15,7 +15,8 @@
         <label><input type="checkbox" class="gradeCheckbox" value="6"> 高3 </label>
         <label><input type="checkbox" class="bestCheckbox"> 成績順 </label>
         <label><input type="checkbox" class="colorCheckbox"> 色 </label>
-        <button id="refreshButton">更新</button>
+        <label><input type="textbox" placeholder="参加させたいユーザ" class="userText" id="userText"><button id="nonparticipationButton">ユーザをランキング表に反映</button></label>
+        <button id="refreshButton">実施中のコンテストの状況を反映</button>
     </div>
         
     <div class="table-container">
@@ -57,6 +58,7 @@
     let g_userData = null;
     let g_contestData = null;
     let g_predictionData = null;
+    let g_nonparticipantData = null;
     let g_selectedUser = null;
     let g_col_sort = null;
     let g_view_best = false;
@@ -103,14 +105,17 @@
 
     // Function to convert grade number to Japanese format
     function convertGradeToJapanese(grade) {
-        if(grade === 0) return `未`;
+        if(grade === 99) return '';
+        if(grade === 0) return '';
         if(grade >= 4) return `高${grade-3}`;
         else return `中${grade}`;
     }
 
     // Setup table with loaded data
     function setupTable() {
-        const allData = mergeResult(structuredClone(g_resultData), g_predictionData);
+
+        const allData = mergeResult(structuredClone(g_resultData), 
+            g_nonparticipantData === null ? g_predictionData : (structuredClone(g_predictionData), g_nonparticipantData));
         const contestNameData = structuredClone(g_contestData);
         // 列のソート
         if(g_selectedUser !== null) {
@@ -122,7 +127,8 @@
             };
             contestNameData.sort(sortByObjValue);
         }
-        const mergedData = mergeData(allData, g_userData);
+        const mergedData = g_nonparticipantData === null ? mergeData(allData, g_userData) :
+                                mergeData(allData, Object.assign(structuredClone(g_userData), g_nonparticipantData));
 
         // Calculate total of the top 3 scores after transformation and sort by descending total
         mergedData.forEach(userData => {
@@ -288,7 +294,14 @@
                 tdTotal.classList.add("selected_user");
             }
 
-            if(rank <= 20) {
+            if(rank == "") {                
+                const bgcolor = "bg-" + color(userData.Rate);
+                tdRank.classList.add(bgcolor)
+                tdUserName.classList.add(bgcolor)
+                tdGrade.classList.add(bgcolor)
+                tdTotal.classList.add(bgcolor)
+            }
+            else if(rank <= 20) {
                 tdRank.classList.add("prize-rank");
                 tdUserName.classList.add("prize");
                 tdGrade.classList.add("prize");
@@ -331,7 +344,7 @@
         }
 
         function color(rate) {
-            if(rate === 0) return "black";
+            if(rate === undefined || rate === 0) return "black";
             else if(rate < 400) return "gray";
             else if(rate < 800) return "brown";
             else if(rate < 1200) return "green";
@@ -347,9 +360,8 @@
             const gradeCheckboxes = document.querySelectorAll(".gradeCheckbox");
             const selectedGrades = Array.from(gradeCheckboxes)
                 .filter(checkbox => checkbox.checked)
-                .map(checkbox => checkbox.value)
-                .reduce((acc, value) => {
-                    acc[value] = true;
+                .reduce((acc, checkbox) => {
+                    acc[checkbox.value] = true;
                     return acc;
                 }, []);
 
@@ -360,14 +372,27 @@
             // Filter data based on selected grades
             const filteredData = selectedGrades.length === 0 
                 ? mergedData 
-                : mergedData.filter(user => user.Grade in selectedGrades);
+                : mergedData.filter(user => (user.Grade in selectedGrades || user.Grade === 99));
 
             // Populate table rows
-            filteredData.forEach((userData, index) => {
-                if(userData.total !== 0) {
-                    tbody.appendChild(createTableRow(userData, index + 1));
-                }
-            });
+            let rank = 0;
+            let same = 1;
+            let oldTotal = -1;
+            for(let i = 0; i < filteredData.length; i++){
+                const userData =  filteredData[i];
+                if(g_nonparticipantData !== null && g_nonparticipantData[userData.UserName] !== undefined) {
+                    tbody.appendChild(createTableRow(userData, ""));
+                }else{
+                    if(oldTotal === userData.total) {
+                    same++;
+                    } else {
+                        rank += same;
+                        same = 1;
+                    }
+                    oldTotal = userData.total;
+                    tbody.appendChild(createTableRow(userData, rank));
+                }                
+            }
         }
 
         // Initial table population
@@ -415,9 +440,25 @@
 
     // Refresh data and update table
     function refreshData() {
-        loadJSON('prediction.json', function(predictionData) {
+        loadJSON('prediction.json').then( predictionData => {
             g_predictionData = predictionData;
-            setupTable(g_contestData, predictionData, g_resultData, g_userData);
+            setupTable();
+        });
+    }
+
+    function getNonparticipationData() {
+        const userInput = document.querySelector('.userText').value.trim();
+        if(g_userData[userInput] !== undefined) {
+            alert("AJL参加者です");
+            return;
+        }
+        loadJSON('users/' + userInput + '.json').then(nonparticipantData => {
+            g_nonparticipantData = nonparticipantData;
+        }).catch(err => {
+            g_nonparticipantData = null;
+            alert("AJL対象コンテストに参加していないユーザーです");
+        }).finally(() => {
+            setupTable();
         });
     }
 
@@ -435,6 +476,13 @@
 
     document.getElementById('refreshButton').addEventListener('click', refreshData);
 
+    document.getElementById('nonparticipationButton').addEventListener('click', getNonparticipationData);
+
+    document.getElementById('userText').addEventListener('keypress', function(event) {
+        if (event.keyCode === 13) {
+            getNonparticipationData();
+        }
+    });
     // Load initial data
     initialLoad();
 </script>
@@ -486,6 +534,9 @@
     }
     td.prize-rank {
         background-color: rgb(66, 163, 201);
+    }
+    td.nonparticipation {
+        background-color: rgba(66, 140, 201, 0.452);
     }
     th.rank, td.rank {
         left: 0;
@@ -552,14 +603,14 @@
     .orange {color: #FF8000}
     .red {color: #FF0000}
 
-    .bg-gray {background-color: #80808050}
-    .bg-brown {background-color: #80400050}
-    .bg-green {background-color: #00800050}
-    .bg-lightblue {background-color: #00C0C050}
-    .bg-blue {background-color: #0000FF50}
-    .bg-yellow {background-color: #C0C00050}
-    .bg-orange {background-color: #FF800050}
-    .bg-red {background-color: #FF000050}
+    td.bg-gray {background-color: #80808050}
+    td.bg-brown {background-color: #80400050}
+    td.bg-green {background-color: #00800050}
+    td.bg-lightblue {background-color: #00C0C050}
+    td.bg-blue {background-color: #0000FF50}
+    td.bg-yellow {background-color: #C0C00050}
+    td.bg-orange {background-color: #FF800050}
+    td.bg-red {background-color: #FF000050}
 
     #headerBackground {
         width: 350px;
