@@ -391,7 +391,7 @@
                     }
                     oldTotal = userData.total;
                     tbody.appendChild(createTableRow(userData, rank));
-                }                
+                }
             }
         }
 
@@ -454,10 +454,17 @@
         }
         loadJSON('users/' + userInput + '.json').then(nonparticipantData => {
             g_nonparticipantData = nonparticipantData;
+            setupTable();
+            const cells = document.getElementsByTagName('td');
+            for (let cell of cells) {
+                if (cell.innerText.includes(userInput)) {
+                    cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    break;
+                }
+            }
         }).catch(err => {
             g_nonparticipantData = null;
             alert("AJL対象コンテストに参加していないユーザーです");
-        }).finally(() => {
             setupTable();
         });
     }
@@ -579,13 +586,13 @@
     }
     div.table-container {
         max-width: 98vw;
-        height: 95vh;
+        height: 93vh;
         overflow-x: auto;
         overflow-y: auto;
         white-space: nowrap;
     }
     body {
-        min-height: 100vh;
+        min-height: 98vh;
     }
     a {
         color: inherit; /* 親要素の色を継承 */
