@@ -115,7 +115,7 @@
     function setupTable() {
 
         const allData = mergeResult(structuredClone(g_resultData), 
-            g_nonparticipantData === null ? g_predictionData : (structuredClone(g_predictionData), g_nonparticipantData));
+            g_nonparticipantData === null ? g_predictionData : mergeResult(structuredClone(g_predictionData), g_nonparticipantData));
         const contestNameData = structuredClone(g_contestData);
         // 列のソート
         if(g_selectedUser !== null) {
