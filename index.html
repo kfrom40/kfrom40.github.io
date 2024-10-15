@@ -68,7 +68,7 @@
     function loadJSON(filename, callback) {
         return new Promise((resolve, reject) => {
             let xhr = new XMLHttpRequest();
-            const url_prefix = "https://kfrom40.qeq.jp/ajl2024summer/";
+            const url_prefix = "https://kfrom40.qeq.jp/ajl2024winter/";
             xhr.overrideMimeType("application/json");
             xhr.open('GET', url_prefix + filename, true);
             xhr.onreadystatechange = function () {
