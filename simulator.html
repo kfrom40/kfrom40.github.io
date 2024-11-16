@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>もしもABC379でAIが使われていたら</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background-color: #f8f9fa;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-direction: column;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    select, input[type="text"] {
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    input[type="text"].people {
+      width: 50px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+
+    main {
+      flex-grow: 1;
+      padding: 20px;
+    }
+
+    table {
+      width: 90%;
+      max-width: 1000px;
+      margin: 0 auto;
+      border-collapse: collapse;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background-color: #fff;
+    }
+
+    table th, table td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #dee2e6;
+    }
+
+    table th {
+      background-color: #f1f3f5;
+      font-weight: bold;
+    }
+
+    table tbody tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+
+    footer {
+      background-color: #f8f9fa;
+      padding: 10px;
+      text-align: center;
+      font-size: 14px;
+      color: #6c757d;
+    }
+
+    #loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      color: #007bff;
+    }
+</style>
+</head>
+<body>
+
+<header>
+  <h2>もしもABC379でもっとAIが使われていたらあなたのレートはどうなってた？</h2>
+  <div class="input-group">
+    <span>あなたのユーザー名：</span>
+    <input type="text" id="user" name="user" placeholder="ユーザー名" required>
+  </div>
+
+  <!-- 1行目 -->
+  <div class="input-group">
+    <span>設定１：</span>
+
+    <span>レートが約</span>
+    <select id="rate1_from" name="rate1_from">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 1900; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>の</span>
+
+    <select id="people1" name="people1">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 1; i <= 9; i += 1) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+        for (let i = 10; i <= 100; i += 10) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>人がAIを使ってパフォーマンス</span>
+    <select  id="rate1_to" name="rate1_to">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 2400; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>を出した</span>
+  </div>
+  
+  <!-- 2行目 -->
+  <div class="input-group">
+    <span>設定２：</span>
+
+    <span>レートが約</span>
+    <select id="rate2_from" name="rate2_from">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 1900; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+
+    <span>の</span>
+    <select id="people2" name="people2">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 1; i <= 9; i += 1) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+        for (let i = 10; i <= 100; i += 10) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+
+    <span>人がAIを使ってパフォーマンス</span>
+
+    <select id="rate2_to" name="rate2_to">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 2400; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>を出した</span>
+  </div>
+  
+  <!-- 3行目 -->
+  <div class="input-group">
+    <span>設定３：</span>
+
+    <span>レートが約</span>
+
+    <select id="people3" name="people3">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 1; i <= 9; i += 1) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+        for (let i = 10; i <= 100; i += 10) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>の</span>
+    <select id="rate3_from" name="rate3_from">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 1900; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+
+    <span>人がAIを使ってパフォーマンス</span>
+    <select id="rate3_to" name="rate3_to">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 2400; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>を出した</span>
+  </div>
+  
+  <!-- 4行目 -->
+  <div class="input-group">
+    <span>設定４：</span>
+    <span>レートが約</span>
+
+    <select id="people4" name="people4">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 1; i <= 9; i += 1) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+        for (let i = 10; i <= 100; i += 10) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>の</span>
+    <select id="rate4_from" name="rate4_from">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 1900; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+
+    <span>人がAIを使ってパフォーマンス</span>
+    <select id="rate4_to" name="rate4_to">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 2400; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>を出した</span>
+  </div>
+  
+  <!-- 5行目 -->
+  <div class="input-group">
+    <span>設定５：</span>
+    <span>レートが約</span>
+
+    <select id="people5" name="people5">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 1; i <= 9; i += 1) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+        for (let i = 10; i <= 100; i += 10) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>の</span>
+    <select id="rate5_from" name="rate5_from">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 1900; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+
+    <span>人がAIを使ってパフォーマンス</span>
+    <select id="rate5_to" name="rate5_to">
+      <script>
+        document.write(`<option value=""></option>`);
+        for (let i = 400; i <= 2400; i += 100) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+    <span>を出した</span>
+  </div>
+
+  <!-- 送信ボタン -->
+  <button id="submit-button">送信</button>
+</header>
+
+<div id="loading">ロード中...</div>
+<main>
+  <table id="result-table">
+    <thead>
+      <tr>
+        <th>結果</th>
+        <th>Rated内順位</th>
+        <th>パフォーマンス</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>実際の結果</td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>AIが使われた場合</td>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+
+<footer>
+  &copy; 2024 Your Company Name
+</footer>
+
+
+<script>
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const loadingElement = document.getElementById('loading');
+    loadingElement.style.display = 'none'; // 明示的に非表示を設定
+  });
+
+  document.getElementById('submit-button').addEventListener('click', () => {
+
+    // ローディング表示を開始
+    const loadingElement = document.getElementById('loading');
+    loadingElement.style.display = 'flex';
+
+    // 入力データを取得
+    const data = {
+      user: document.getElementById('user').value,
+      people1: document.getElementById('people1').value,
+      rate1_from: document.getElementById('rate1_from').value,
+      rate1_to: document.getElementById('rate1_to').value,
+
+      people2: document.getElementById('people2').value,
+      rate2_from: document.getElementById('rate2_from').value,
+      rate2_to: document.getElementById('rate2_to').value,
+
+      people3: document.getElementById('people3').value,
+      rate3_from: document.getElementById('rate3_from').value,
+      rate3_to: document.getElementById('rate3_to').value,
+
+      people4: document.getElementById('people4').value,
+      rate4_from: document.getElementById('rate4_from').value,
+      rate4_to: document.getElementById('rate4_to').value,
+
+      people5: document.getElementById('people5').value,
+      rate5_from: document.getElementById('rate5_from').value,
+      rate5_to: document.getElementById('rate5_to').value
+
+    };
+
+    // AJAXリクエスト
+    fetch('https://kfrom40.qeq.jp/ai_simulator/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(json => {
+      const table = document.getElementById('result-table');
+      // 実際の結果を更新
+      console.log(json.actual.rank);
+      table.rows[1].cells[1].textContent = json.actual.rank || '';
+      table.rows[1].cells[2].textContent = json.actual.performance || '';
+
+      // AIの結果を更新
+      table.rows[2].cells[1].textContent = json.ai.rank || '';
+      table.rows[2].cells[2].textContent = json.ai.performance || '';
+    })
+    .catch(error => console.error('エラー:', error))
+    .finally(() => {
+      // ローディング表示を終了
+      loadingElement.style.display = 'none';
+    });
+  });
+</script>
+
+</body>
+</html>
